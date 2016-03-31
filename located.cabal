@@ -17,6 +17,7 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     Text.Location
+                       Text.Location.Layout
   ghc-options:         -Wall
   other-extensions:    DeriveGeneric,
                        DeriveFunctor,
