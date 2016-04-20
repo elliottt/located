@@ -1,7 +1,6 @@
 name:                located
 version:             0.1.0.0
--- synopsis:            
--- description:         
+synopsis:            Source location helpers
 homepage:            https://github.com/elliottt/located
 license:             BSD3
 license-file:        LICENSE
@@ -11,6 +10,13 @@ copyright:           2016
 category:            Language
 build-type:          Simple
 cabal-version:       >=1.10
+tested-with:         GHC == 7.10.2
+
+source-repository head
+  type:              git
+  location:          git://github.com/elliottt/located.git
+
+extra-source-files:  CHANGELOG.md
 
 library
   exposed-modules:     Text.Location
