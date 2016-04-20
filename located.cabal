@@ -12,11 +12,16 @@ build-type:          Simple
 cabal-version:       >=1.10
 tested-with:         GHC == 7.10.2
 
+extra-source-files:  CHANGELOG.md
+
+description:
+  Types and functions for working with location-tagged tokens. Includes an
+  implementation of the offsides-rule, to make adding layout to a compiler an
+  easy task.
+
 source-repository head
   type:              git
   location:          git://github.com/elliottt/located.git
-
-extra-source-files:  CHANGELOG.md
 
 library
   exposed-modules:     Text.Location
