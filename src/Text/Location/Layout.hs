@@ -32,6 +32,8 @@ layout Layout { .. } = go Nothing []
   currentLevel (loc : _) = startCol loc
   currentLevel []        = 0
 
+  -- a new layout level has been started, emit a starting token, and push the
+  -- current level on the stack.
   go Just{} stack (tok@Located { .. } : toks) =
     (start `at` locRange) : tok : go Nothing (locRange:stack) toks
 
@@ -40,17 +42,20 @@ layout Layout { .. } = go Nothing []
 
   go Nothing stack ts@(tok@Located { .. } : toks)
 
+    -- when the next token would close the current level
+    | startCol locRange < currentLevel stack =
+      (end `at` locRange) : go Nothing (tail stack) ts
+
     | beginsLayout locValue =
-      tok : go (Just locRange) stack toks
+      let sepToks | startCol locRange == currentLevel stack = [sep `at` locRange]
+                  | otherwise                               = []
+       in sepToks ++ tok : go (Just locRange) stack toks
 
     | endsLayout locValue =
-       (end `at` locRange) : tok : go Nothing (tail stack) toks
+      (end `at` locRange) : tok : go Nothing (tail stack) toks
 
     | startCol locRange == currentLevel stack =
       (sep `at` locRange) : tok : go Nothing stack toks
-
-    | startCol locRange < currentLevel stack =
-      (end `at` locRange) : go Nothing (tail stack) ts
 
     | otherwise =
       tok : go Nothing stack toks
