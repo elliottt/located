@@ -8,23 +8,23 @@ module Text.Location.Layout (
 import Text.Location
 
 
-data Layout a = Layout { beginsLayout :: a -> Bool
-                         -- ^ True when this token begins layout
+data Layout tok = Layout { beginsLayout :: tok -> Bool
+                           -- ^ True when this token begins layout
+  
+                         , endsLayout :: tok -> Bool
+                           -- ^ True when this token explicitly ends layout
+  
+                         , sep :: Range -> tok
+                           -- ^ The separator token
+  
+                         , start :: Range -> tok
+                           -- ^ Layout block starting token
+  
+                         , end :: Range -> tok
+                           -- ^ Layout block ending token
+                         }
 
-                       , endsLayout :: a -> Bool
-                         -- ^ True when this token explicitly ends layout
-
-                       , sep :: a
-                         -- ^ The separator token
-
-                       , start :: a
-                         -- ^ Layout block starting token
-
-                       , end :: a
-                         -- ^ Layout block ending token
-                       }
-
-layout :: Layout a -> [Located source a] -> [Located source a]
+layout :: HasRange tok => Layout tok -> [tok] -> [tok]
 layout Layout { .. } = go Nothing []
   where
   startCol Range { rangeStart = Position { .. } } = posCol
@@ -34,31 +34,35 @@ layout Layout { .. } = go Nothing []
 
   -- a new layout level has been started, emit a starting token, and push the
   -- current level on the stack.
-  go Just{} stack (tok@Located { .. } : toks) =
-    (start `at` locRange) : tok : go Nothing (locRange:stack) toks
+  go Just{} stack (tok : toks) =
+    let loc = getRange tok
+     in start loc : tok : go Nothing (loc:stack) toks
 
   go (Just loc) stack [] =
-    (start `at` loc) : go Nothing (loc : stack) []
+    start loc : go Nothing (loc : stack) []
 
-  go Nothing stack ts@(tok@Located { .. } : toks)
+  go Nothing stack ts@(tok : toks)
 
     -- when the next token would close the current level
-    | startCol locRange < currentLevel stack =
-      (end `at` locRange) : go Nothing (tail stack) ts
+    | startCol loc < currentLevel stack =
+      end loc : go Nothing (tail stack) ts
 
-    | beginsLayout locValue =
-      let sepToks | startCol locRange == currentLevel stack = [sep `at` locRange]
-                  | otherwise                               = []
-       in sepToks ++ tok : go (Just locRange) stack toks
+    | beginsLayout tok =
+      let sepToks | startCol loc == currentLevel stack = [sep loc]
+                  | otherwise                          = []
+       in sepToks ++ tok : go (Just loc) stack toks
 
-    | endsLayout locValue =
-      (end `at` locRange) : tok : go Nothing (tail stack) toks
+    | endsLayout tok =
+      end loc : tok : go Nothing (tail stack) toks
 
-    | startCol locRange == currentLevel stack =
-      (sep `at` locRange) : tok : go Nothing stack toks
+    | startCol loc == currentLevel stack =
+      sep loc : tok : go Nothing stack toks
 
     | otherwise =
       tok : go Nothing stack toks
 
+    where
+    loc = getRange loc
+
   go _ stack [] =
-    [ end `at` loc | loc <- stack ]
+    [ end loc | loc <- stack ]
